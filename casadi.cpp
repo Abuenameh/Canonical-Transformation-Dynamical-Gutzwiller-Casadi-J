@@ -560,8 +560,11 @@ void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vecto
 
         for (int i = 0; i < L; i++) {
             for (int n = 0; n <= nmax; n++) {
+                cout << "Here 1" << endl;
                 SX E = energy(i, n, fin, J, U, mu);
+                cout << "Here 2" << endl;
                 SX S = canonical(i, n, fin, J, U, mu);
+                cout << "Here 3" << endl;
                 SXFunction Sf(vector<SX>{t}, vector<SX>{S});
                 Sf.init();
                 Function Sdtf = Sf.gradient(0, 0);
@@ -639,7 +642,6 @@ void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vecto
             loadFunction(Egradf[j], compiledir + "/Egrad." + to_string(i) + "." + to_string(n));
         }
     }
-    exit(0);
 
     x0.clear();
     for (double f0i : f0_) x0.push_back(f0i);
