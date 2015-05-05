@@ -560,11 +560,8 @@ void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vecto
 
         for (int i = 0; i < L; i++) {
             for (int n = 0; n <= nmax; n++) {
-                cout << "Here 1" << endl;
-                SX E = energy(i, n, fin, J, U, mu);
-                cout << "Here 2" << endl;
-                SX S = canonical(i, n, fin, J, U, mu);
-                cout << "Here 3" << endl;
+                SX E = energy(0, n, fin, J, U, mu);
+                SX S = canonical(0, n, fin, J, U, mu);
                 SXFunction Sf(vector<SX>{t}, vector<SX>{S});
                 Sf.init();
                 Function Sdtf = Sf.gradient(0, 0);
