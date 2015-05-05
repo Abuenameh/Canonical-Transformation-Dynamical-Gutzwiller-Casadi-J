@@ -1339,6 +1339,7 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
     complex<SX> exp2th = expth*expth;
     complex<SX> expm2th = ~exp2th;
 
+    cout << "_/";
     vector<complex<SX>* > f(L);
     vector<SX> norm2(L, 0);
     for (int j = 0; j < L; j++) {
@@ -1347,6 +1348,7 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
             norm2[j] += f[j][m].real() * f[j][m].real() + f[j][m].imag() * f[j][m].imag();
         }
     }
+    cout << "_/";
 
 
     complex<SX> E = complex<SX>(0, 0);
