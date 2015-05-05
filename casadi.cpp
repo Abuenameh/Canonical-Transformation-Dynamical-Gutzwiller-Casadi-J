@@ -560,8 +560,8 @@ void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vecto
 
         for (int i = 0; i < L; i++) {
             for (int n = 0; n <= nmax; n++) {
-                SX E = energy(0, n, fin, J, U, mu);
-                SX S = canonical(0, n, fin, J, U, mu);
+                SX E = energy(1, n, fin, J, U, mu);
+                SX S = canonical(1, n, fin, J, U, mu);
                 SXFunction Sf(vector<SX>{t}, vector<SX>{S});
                 Sf.init();
                 Function Sdtf = Sf.gradient(0, 0);
