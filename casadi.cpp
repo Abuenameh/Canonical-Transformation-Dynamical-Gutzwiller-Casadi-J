@@ -1368,17 +1368,17 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
     Ej2k2 = complex<SX>(0, 0);
 
     for (int n = 0; n <= nmax; n++) {
-        cout << "_/" << endl;
+        cout << "_/";
         Ei += (0.5 * U[i] * n * (n - 1) - mu * n) * ~f[i][n] * f[i][n];
 
         if (n < nmax) {
-        cout << "_/" << endl;
+        cout << "_/";
             Ej1 += -J[j1] * expth * g(n, n + 1) * ~f[i][n + 1] * ~f[j1][n]
                     * f[i][n] * f[j1][n + 1];
             Ej2 += -J[i] * expmth * g(n, n + 1) * ~f[i][n + 1] * ~f[j2][n] * f[i][n]
                     * f[j2][n + 1];
 
-        cout << "_/" << endl;
+        cout << "_/";
             if (n > 0) {
                 Ej1 += 0.5 * J[j1] * J[j1] * exp2th * g(n, n) * g(n - 1, n + 1) * (1 / eps(U, i, j1, n, n))
                         * ~f[i][n + 1] * ~f[j1][n - 1] * f[i][n - 1] * f[j1][n + 1];
@@ -1392,7 +1392,7 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
                         * ~f[i][n + 2] * ~f[j2][n] * f[i][n] * f[j2][n + 2];
             }
 
-        cout << "_/" << endl;
+        cout << "_/";
             for (int m = 1; m <= nmax; m++) {
                 if (n != m - 1) {
                     Ej1 += 0.5 * J[j1] * J[j1] * g(n, m) * g(m - 1, n + 1) * (1 / eps(U, i, j1, n, m))
