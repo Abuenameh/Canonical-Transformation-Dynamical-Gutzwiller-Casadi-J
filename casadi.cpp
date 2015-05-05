@@ -639,6 +639,7 @@ void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vecto
             loadFunction(Egradf[j], compiledir + "/Egrad." + to_string(i) + "." + to_string(n));
         }
     }
+    exit(0);
 
     x0.clear();
     for (double f0i : f0_) x0.push_back(f0i);
