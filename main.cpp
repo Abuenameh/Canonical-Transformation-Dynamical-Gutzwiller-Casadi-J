@@ -64,7 +64,7 @@ boost::mutex problem_mutex;
 boost::random::mt19937 rng;
 boost::random::uniform_real_distribution<> uni(-1, 1);
 
-void threadfunc(double Wi, double Wf, double mu, vector<double> xi, double tauf, queue<input>& inputs, vector<results>& res, progress_display& progress, barrier& bar, int thread) {
+void threadfunc(double Ji, double Jf, double mu, vector<double> xi, double tauf, queue<input>& inputs, vector<results>& res, progress_display& progress, barrier& bar, int thread) {
     DynamicsProblem* prob;
 
     {
@@ -186,12 +186,12 @@ int main(int argc, char** argv) {
 
     int seed = lexical_cast<int>(argv[1]);
 
-    double Wi = lexical_cast<double>(argv[2]);
-    double Wf = lexical_cast<double>(argv[3]);
+    double Ji = lexical_cast<double>(argv[2]);
+    double Jf = lexical_cast<double>(argv[3]);
 
     double mu = lexical_cast<double>(argv[4]);
 
-    double Ui = UWi(Wi);
+    double Ui = 1;//UWi(Wi);
 
     double D = lexical_cast<double>(argv[5]);
 
@@ -225,9 +225,9 @@ int main(int argc, char** argv) {
 
 #ifdef AMAZON
     //    path resdir("/home/ubuntu/Results/Canonical Transformation Dynamical Gutzwiller");
-    path resdir("/home/ubuntu/Dropbox/Amazon EC2/Simulation Results/Canonical Transformation Dynamical Gutzwiller");
+    path resdir("/home/ubuntu/Dropbox/Amazon EC2/Simulation Results/Canonical Transformation Dynamical Gutzwiller J");
 #else
-    path resdir("/Users/Abuenameh/Documents/Simulation Results/Canonical Transformation Dynamical Gutzwiller");
+    path resdir("/Users/Abuenameh/Documents/Simulation Results/Canonical Transformation Dynamical Gutzwiller J");
     //        path resdir("/Users/Abuenameh/Documents/Simulation Results/Dynamical Gutzwiller Hartmann Comparison");
 #endif
     if (!exists(resdir)) {
@@ -290,8 +290,8 @@ int main(int argc, char** argv) {
 
     os << flush;
 
-        printMath(os, "Wires", resi, Wi);
-        printMath(os, "Wfres", resi, Wf);
+        printMath(os, "Jires", resi, Ji);
+        printMath(os, "Jfres", resi, Jf);
     os << flush;
 
     cout << "Res: " << resi << endl;
@@ -321,13 +321,13 @@ int main(int argc, char** argv) {
             f0[i] = uni(rng);
         }
 
-    DynamicsProblem::setup(Wi, Wf, mui, xi, f0, dt);
+    DynamicsProblem::setup(Ji, Jf, mui, 1, xi, f0, dt);
     
     barrier bar(numthreads);
     
     thread_group threads;
     for (int i = 0; i < numthreads; i++) {
-        threads.create_thread(bind(&threadfunc, Wi, Wf, mui, xi, tauf, boost::ref(inputs), boost::ref(res), boost::ref(progress), boost::ref(bar), i));
+        threads.create_thread(bind(&threadfunc, Ji, Jf, mui, xi, tauf, boost::ref(inputs), boost::ref(res), boost::ref(progress), boost::ref(bar), i));
     }
     threads.join_all();
 

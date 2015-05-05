@@ -62,6 +62,10 @@ inline SX eps(SX& U, int n, int m) {
     return (n - m + 1) * U;
 }
 
+inline SX eps(SX& U, int i, int j, int n, int m) {
+	return eps(U, n, m);
+}
+
 inline SX eps(vector<SX>& U, int i, int j, int n, int m, int k, int l, int p, int q) {
     return n*U[i] - (m-1)*U[j] + (q-1)*U[k] - p*U[l];
 }

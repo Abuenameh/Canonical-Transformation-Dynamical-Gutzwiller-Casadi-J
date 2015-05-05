@@ -38,7 +38,7 @@ public:
 
     void setTau(double tau_);
 
-    static void setup(double Wi_, double Wf_, double mu_, vector<double>& xi_, vector<double>& f0_, double dt_);
+    static void setup(double Ji_, double Jf_, double mu_, double U_, vector<double>& xi_, vector<double>& f0_, double dt_);
 
     static double E(const vector<double>& f, vector<double>& grad);
 
@@ -85,7 +85,7 @@ public:
     }
 
     double getU0() {
-        return U00;
+        return U0;
     }
 
     vector<double> getJ0() {
@@ -117,21 +117,21 @@ private:
 
     complex<SX> HS();
     SX W();
-    static SX energy(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    static SX energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    SX energya(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    SX energy0(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    SX energync(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    static SX canonical(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    static SX canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
-    SX canonicala(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu);
+    static SX energy(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+    static SX energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+//    SX energya(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+//    SX energy0(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+//    SX energync(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+    static SX canonical(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+    static SX canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
+//    SX canonicala(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu);
 
     double tf;
     
     static double dt;
 
     static vector<double> xi;
-    static double U00;
+    static double U0;
     static vector<double> J0;
 
     vector<Function> odes;

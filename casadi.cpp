@@ -466,7 +466,7 @@ void SumFunction(CustomFunction& f, void* user_data) {
 }
 
 double DynamicsProblem::scale = 1;
-double DynamicsProblem::U00;
+double DynamicsProblem::U0;
 vector<double> DynamicsProblem::J0;
 vector<double> DynamicsProblem::xi;
 
@@ -480,31 +480,31 @@ vector<Function> DynamicsProblem::Egradf;
 vector<double> DynamicsProblem::sparams;
 vector<double> DynamicsProblem::gsparams;
 
-void DynamicsProblem::setup(double Wi_, double Wf_, double mu_, vector<double>& xi_, vector<double>& f0_, double dt_) {
+void DynamicsProblem::setup(double Ji_, double Jf_, double mu_, double U_, vector<double>& xi_, vector<double>& f0_, double dt_) {
 
     xi = xi_;
     
     dt = dt_;
 
     sparams.clear();
-    sparams.push_back(Wi_);
-    sparams.push_back(Wf_);
+    sparams.push_back(Ji_);
+    sparams.push_back(Jf_);
     sparams.push_back(mu_);
     for (double xii : xi_) sparams.push_back(xii);
     sparams.push_back(1);
 
     gsparams.clear();
-    gsparams.push_back(Wi_);
-    gsparams.push_back(Wf_);
+    gsparams.push_back(Ji_);
+    gsparams.push_back(Jf_);
     gsparams.push_back(mu_);
     for (double xii : xi_) gsparams.push_back(xii);
     gsparams.push_back(1);
     gsparams.push_back(0);
 
-    U00 = scale * UW(Wi_);
+    U0 = U_;
     J0 = vector<double>(L);
     for (int i = 0; i < L; i++) {
-        J0[i] = scale * JWij(Wi_ * xi[i], Wi_ * xi[mod(i + 1)]);
+        J0[i] = Ji_ * xi[i];
     }
 
     string compiledir = "L" + to_string(L) + "nmax" + to_string(nmax);
@@ -515,28 +515,25 @@ void DynamicsProblem::setup(double Wi_, double Wf_, double mu_, vector<double>& 
         create_directory(compilepath);
 
         vector<SX> fin = SX::sym("f", 1, 1, 2 * L * dim);
-        vector<SX> dU = SX::sym("dU", 1, 1, L);
         vector<SX> J = SX::sym("J", 1, 1, L);
-        SX U0 = SX::sym("U0");
         SX t = SX::sym("t");
         SX mu = SX::sym("mu");
 
         SX tau = SX::sym("tau");
-        SX Wi = SX::sym("Wi");
-        SX Wf = SX::sym("Wf");
-        SX Wt = if_else(t < tau, Wi + (Wf - Wi) * t / tau, Wf + (Wi - Wf) * (t - tau) / tau);
+        SX Ji = SX::sym("Ji");
+        SX Jf = SX::sym("Jf");
+        SX Jt = if_else(t < tau, Ji + (Jf - Ji) * t / tau, Jf + (Ji - Jf) * (t - tau) / tau);
 
         vector<SX> xiv = SX::sym("xi", 1, 1, L);
 
-        U0 = scale * UW(Wt);
+        SX U = U_;
         for (int i = 0; i < L; i++) {
-            J[i] = scale * JWij(Wt * xiv[i], Wt * xiv[mod(i + 1)]);
-            dU[i] = scale * UW(Wt * xiv[i]) - U0;
+            J[i] = Jt * xiv[i];;
         }
 
         vector<SX> paramsv;
-        paramsv.push_back(Wi);
-        paramsv.push_back(Wf);
+        paramsv.push_back(Ji);
+        paramsv.push_back(Jf);
         paramsv.push_back(mu);
         for (SX xii : xiv) paramsv.push_back(xii);
         paramsv.push_back(tau);
@@ -563,8 +560,8 @@ void DynamicsProblem::setup(double Wi_, double Wf_, double mu_, vector<double>& 
 
         for (int i = 0; i < L; i++) {
             for (int n = 0; n <= nmax; n++) {
-                SX E = energy(i, n, fin, J, U0, dU, mu);
-                SX S = canonical(i, n, fin, J, U0, dU, mu);
+                SX E = energy(i, n, fin, J, U, mu);
+                SX S = canonical(i, n, fin, J, U, mu);
                 SXFunction Sf(vector<SX>{t}, vector<SX>{S});
                 Sf.init();
                 Function Sdtf = Sf.gradient(0, 0);
@@ -776,8 +773,8 @@ void DynamicsProblem::evolve() {
     b0 = vector<complex<double>>(L);
     bf = vector<complex<double>>(L);
     for (int i = 0; i < L; i++) {
-        b0[i] = b(f0, i, J0, U00);
-        bf[i] = b(ff, i, J0, U00);
+        b0[i] = b(f0, i, J0, U0);
+        bf[i] = b(ff, i, J0, U0);
     }
 
     vector<double> grad;
@@ -829,7 +826,7 @@ double DynamicsProblem::E(const vector<double>& f, vector<double>& grad) {
     return E;
 }
 
-SX DynamicsProblem::energync(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
+/*SX DynamicsProblem::energync(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
 
     complex<SX> expth = complex<SX>(1, 0);
     complex<SX> expmth = ~expth;
@@ -1322,20 +1319,143 @@ SX DynamicsProblem::canonicala(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX
     }
 
     return S.imag();
+}*/
+
+SX DynamicsProblem::energy(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu) {
+
+    SX E = 0;
+    for (int i = 0; i < L; i++) {
+        for (int n = 0; n <= nmax; n++) {
+            E += energy(i, n, fin, J, U, mu);
+        }
+    }
+    return E;
 }
 
-SX DynamicsProblem::canonical(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
+SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, SX& mu) {
+
+    complex<SX> expth = complex<SX>(1, 0);
+    complex<SX> expmth = ~expth;
+    complex<SX> exp2th = expth*expth;
+    complex<SX> expm2th = ~exp2th;
+
+    vector<complex<SX>* > f(L);
+    vector<SX> norm2(L, 0);
+    for (int j = 0; j < L; j++) {
+        f[j] = reinterpret_cast<complex<SX>*> (&fin[2 * j * dim]);
+        for (int m = 0; m <= nmax; m++) {
+            norm2[j] += f[j][m].real() * f[j][m].real() + f[j][m].imag() * f[j][m].imag();
+        }
+    }
+
+
+    complex<SX> E = complex<SX>(0, 0);
+
+    complex<SX> Ei, Ej1, Ej2, Ej1j2, Ej1k1, Ej2k2;
+
+    //    for (int i = 0; i < L; i++) {
+
+    int k1 = mod(i - 2);
+    int j1 = mod(i - 1);
+    int j2 = mod(i + 1);
+    int k2 = mod(i + 2);
+
+    Ei = complex<SX>(0, 0);
+    Ej1 = complex<SX>(0, 0);
+    Ej2 = complex<SX>(0, 0);
+    Ej1j2 = complex<SX>(0, 0);
+    Ej1k1 = complex<SX>(0, 0);
+    Ej2k2 = complex<SX>(0, 0);
+
+    for (int n = 0; n <= nmax; n++) {
+        Ei += (0.5 * U[i] * n * (n - 1) - mu * n) * ~f[i][n] * f[i][n];
+
+        if (n < nmax) {
+            Ej1 += -J[j1] * expth * g(n, n + 1) * ~f[i][n + 1] * ~f[j1][n]
+                    * f[i][n] * f[j1][n + 1];
+            Ej2 += -J[i] * expmth * g(n, n + 1) * ~f[i][n + 1] * ~f[j2][n] * f[i][n]
+                    * f[j2][n + 1];
+
+            if (n > 0) {
+                Ej1 += 0.5 * J[j1] * J[j1] * exp2th * g(n, n) * g(n - 1, n + 1) * (1 / eps(U, i, j1, n, n))
+                        * ~f[i][n + 1] * ~f[j1][n - 1] * f[i][n - 1] * f[j1][n + 1];
+                Ej2 += 0.5 * J[i] * J[i] * expm2th * g(n, n) * g(n - 1, n + 1) * (1 / eps(U, i, j2, n, n))
+                        * ~f[i][n + 1] * ~f[j2][n - 1] * f[i][n - 1] * f[j2][n + 1];
+            }
+            if (n < nmax - 1) {
+                Ej1 -= 0.5 * J[j1] * J[j1] * exp2th * g(n, n + 2) * g(n + 1, n + 1) * (1 / eps(U, i, j1, n, n + 2))
+                        * ~f[i][n + 2] * ~f[j1][n] * f[i][n] * f[j1][n + 2];
+                Ej2 -= 0.5 * J[i] * J[i] * expm2th * g(n, n + 2) * g(n + 1, n + 1) * (1 / eps(U, i, j2, n, n + 2))
+                        * ~f[i][n + 2] * ~f[j2][n] * f[i][n] * f[j2][n + 2];
+            }
+
+            for (int m = 1; m <= nmax; m++) {
+                if (n != m - 1) {
+                    Ej1 += 0.5 * J[j1] * J[j1] * g(n, m) * g(m - 1, n + 1) * (1 / eps(U, i, j1, n, m))
+                            * (~f[i][n + 1] * ~f[j1][m - 1] * f[i][n + 1] * f[j1][m - 1] -
+                            ~f[i][n] * ~f[j1][m] * f[i][n] * f[j1][m]);
+                    Ej2 += 0.5 * J[i] * J[i] * g(n, m) * g(m - 1, n + 1) * (1 / eps(U, i, j2, n, m))
+                            * (~f[i][n + 1] * ~f[j2][m - 1] * f[i][n + 1] * f[j2][m - 1] -
+                            ~f[i][n] * ~f[j2][m] * f[i][n] * f[j2][m]);
+
+                    for (int p = 0; p < nmax; p++) {
+                        if (p != n - 1 && 2 * n - m == p && n > 0) {
+                            Ej1j2 += 0.5 * J[j1] * J[i] * g(n, m) * g(n - 1, p + 1) * (1 / eps(U, i, j1, n, m))
+                                    * ~f[i][n + 1] * ~f[j1][m - 1] * ~f[j2][p]
+                                    * f[i][n - 1] * f[j1][m] * f[j2][p + 1];
+                            Ej1j2 += 0.5 * J[j1] * J[i] * g(n, m) * g(n - 1, p + 1) * (1 / eps(U, i, j2, n, m))
+                                    * ~f[i][n + 1] * ~f[j2][m - 1] * ~f[j1][p]
+                                    * f[i][n - 1] * f[j2][m] * f[j1][p + 1];
+                        }
+                        if (p != n + 1 && 2 * n - m == p - 2 && n < nmax - 1) {
+                            Ej1j2 -= 0.5 * J[j1] * J[i] * g(n, m) * g(n + 1, p + 1) * (1 / eps(U, i, j1, n, m))
+                                    * ~f[i][n + 2] * ~f[j1][m - 1] * ~f[j2][p]
+                                    * f[i][n] * f[j1][m] * f[j2][p + 1];
+                            Ej1j2 -= 0.5 * J[j1] * J[i] * g(n, m) * g(n + 1, p + 1) * (1 / eps(U, i, j2, n, m))
+                                    * ~f[i][n + 2] * ~f[j2][m - 1] * ~f[j1][p]
+                                    * f[i][n] * f[j2][m] * f[j1][p + 1];
+                        }
+                    }
+
+                    Ej1k1 += 0.5 * J[j1] * J[k1] * exp2th * g(n, m) * g(m - 1, n + 1)*(1 / eps(U, i, j1, n, m))
+                            * (~f[i][n + 1] * ~f[j1][m - 1] * ~f[k1][n]
+                            * f[i][n] * f[j1][m - 1] * f[k1][n + 1] -
+                            ~f[i][n + 1] * ~f[j1][m] * ~f[k1][n]
+                            * f[i][n] * f[j1][m] * f[k1][n + 1]);
+                    Ej2k2 += 0.5 * J[j2] * J[i] * expm2th * g(n, m) * g(m - 1, n + 1)*(1 / eps(U, i, j2, n, m))
+                            * (~f[i][n + 1] * ~f[j2][m - 1] * ~f[k2][n]
+                            * f[i][n] * f[j2][m - 1] * f[k2][n + 1] -
+                            ~f[i][n + 1] * ~f[j2][m] * ~f[k2][n]
+                            * f[i][n] * f[j2][m] * f[k2][n + 1]);
+                }
+            }
+        }
+    }
+
+    E += Ei / norm2[i];
+
+    E += Ej1 / (norm2[i] * norm2[j1]);
+    E += Ej2 / (norm2[i] * norm2[j2]);
+
+    E += Ej1j2 / (norm2[i] * norm2[j1] * norm2[j2]);
+    E += Ej1k1 / (norm2[i] * norm2[j1] * norm2[k1]);
+    E += Ej2k2 / (norm2[i] * norm2[j2] * norm2[k2]);
+
+    return E.real();
+}
+
+SX DynamicsProblem::canonical(vector<SX>& fin, vector<SX>& J, SX& U, SX& mu) {
 
     SX S = 0;
     for (int i = 0; i < L; i++) {
         for (int n = 0; n <= nmax; n++) {
-            S += canonical(i, n, fin, J, U0, dU, mu);
+            S += canonical(i, n, fin, J, U, mu);
         }
     }
     return S;
 }
 
-SX DynamicsProblem::canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
+SX DynamicsProblem::canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, SX& mu) {
 
     vector<complex<SX>* > f(L);
     vector<SX> norm2(L, 0);
@@ -1362,9 +1482,9 @@ SX DynamicsProblem::canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& 
     if (n < nmax) {
         for (int m = 1; m <= nmax; m++) {
             if (n != m - 1) {
-                Sj1 += -J[j1] * g(n, m) * (1 / eps(U0, n, m))
+                Sj1 += -J[j1] * g(n, m) * (1 / eps(U, n, m))
                         * ~f[i][n + 1] * ~f[j1][m - 1] * f[i][n] * f[j1][m];
-                Sj2 += -J[i] * g(n, m) * (1 / eps(U0, n, m))
+                Sj2 += -J[i] * g(n, m) * (1 / eps(U, n, m))
                         * ~f[i][n + 1] * ~f[j2][m - 1] * f[i][n] * f[j2][m];
 
             }
@@ -1382,7 +1502,7 @@ SX DynamicsProblem::canonical(int i, int n, vector<SX>& fin, vector<SX>& J, SX& 
     return S.imag();
 }
 
-SX DynamicsProblem::energy0(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
+/*SX DynamicsProblem::energy0(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& dU, SX& mu) {
 
     complex<SX> expth = complex<SX>(1, 0);
     complex<SX> expmth = ~expth;
@@ -1518,5 +1638,5 @@ SX DynamicsProblem::energy0(vector<SX>& fin, vector<SX>& J, SX& U0, vector<SX>& 
     }
 
     return E.real();
-}
+}*/
 
