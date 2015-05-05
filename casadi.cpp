@@ -1339,7 +1339,6 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
     complex<SX> exp2th = expth*expth;
     complex<SX> expm2th = ~exp2th;
 
-    cout << "_/";
     vector<complex<SX>* > f(L);
     vector<SX> norm2(L, 0);
     for (int j = 0; j < L; j++) {
@@ -1348,7 +1347,6 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
             norm2[j] += f[j][m].real() * f[j][m].real() + f[j][m].imag() * f[j][m].imag();
         }
     }
-    cout << "_/";
 
 
     complex<SX> E = complex<SX>(0, 0);
@@ -1370,17 +1368,14 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
     Ej2k2 = complex<SX>(0, 0);
 
     for (int n = 0; n <= nmax; n++) {
-        cout << "_/";
-        Ei += (0.5 * U[i] * n * (n - 1) - mu * n) * ~f[i][n] * f[i][n];
+        Ei += (0.5 * U * n * (n - 1) - mu * n) * ~f[i][n] * f[i][n];
 
         if (n < nmax) {
-        cout << "_/";
             Ej1 += -J[j1] * expth * g(n, n + 1) * ~f[i][n + 1] * ~f[j1][n]
                     * f[i][n] * f[j1][n + 1];
             Ej2 += -J[i] * expmth * g(n, n + 1) * ~f[i][n + 1] * ~f[j2][n] * f[i][n]
                     * f[j2][n + 1];
 
-        cout << "_/";
             if (n > 0) {
                 Ej1 += 0.5 * J[j1] * J[j1] * exp2th * g(n, n) * g(n - 1, n + 1) * (1 / eps(U, i, j1, n, n))
                         * ~f[i][n + 1] * ~f[j1][n - 1] * f[i][n - 1] * f[j1][n + 1];
@@ -1394,7 +1389,6 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
                         * ~f[i][n + 2] * ~f[j2][n] * f[i][n] * f[j2][n + 2];
             }
 
-        cout << "_/";
             for (int m = 1; m <= nmax; m++) {
                 if (n != m - 1) {
                     Ej1 += 0.5 * J[j1] * J[j1] * g(n, m) * g(m - 1, n + 1) * (1 / eps(U, i, j1, n, m))
@@ -1437,7 +1431,6 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
             }
         }
     }
-    cout << endl;
 
     E += Ei / norm2[i];
 
