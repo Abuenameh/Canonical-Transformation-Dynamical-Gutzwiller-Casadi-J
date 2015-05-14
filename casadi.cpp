@@ -1367,7 +1367,7 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
     Ej1k1 = complex<SX>(0, 0);
     Ej2k2 = complex<SX>(0, 0);
 
-    for (int n = 0; n <= nmax; n++) {
+//    for (int n = 0; n <= nmax; n++) {
         Ei += (0.5 * U * n * (n - 1) - mu * n) * ~f[i][n] * f[i][n];
 
         if (n < nmax) {
@@ -1430,7 +1430,7 @@ SX DynamicsProblem::energy(int i, int n, vector<SX>& fin, vector<SX>& J, SX& U, 
                 }
             }
         }
-    }
+//    }
 
     E += Ei / norm2[i];
 
